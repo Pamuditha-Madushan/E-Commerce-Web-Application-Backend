@@ -1,4 +1,6 @@
-# eCommerce-Application
+# MERN-E-Commerce-Application
+
+Build using MERN tech stack.
 
 PROJECT INSTRUCTIONS
 
@@ -8,7 +10,7 @@ STEP – 01
 
 Download project source code.
 
-GitHub: https://github.com/mohamedinfath99/eCommerce-application.git
+GitHub: https://github.com/Pamuditha-Madushan/MERN-E-Commerce-Application.git
 
 <br />
 
