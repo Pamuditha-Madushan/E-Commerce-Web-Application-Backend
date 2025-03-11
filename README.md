@@ -1,6 +1,6 @@
-# MERN-E-Commerce-Application
+# E-Commerce-Basic-Web-Application-Backend
 
-Build using MERN tech stack.
+Build using Node.js, Express.js and Mongo DB.
 
 PROJECT INSTRUCTIONS
 
@@ -22,4 +22,4 @@ Open the project in VS Code
 
 STEP – 03
 
-Open the Terminal & Navigate to Server Folder: npm run dev
+Open the Terminal & Navigate to Server Folder: node server.js
