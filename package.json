@@ -12,6 +12,7 @@
   "author": "Pamuditha Madushan",
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/storage": "^7.15.2",
     "bcrypt": "^5.1.0",
     "braintree": "^3.13.0",
     "colors": "^1.4.0",

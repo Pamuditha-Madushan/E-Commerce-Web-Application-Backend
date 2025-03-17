@@ -9,6 +9,7 @@ const {
   isEmailExistsLean,
   isEmailExists,
 } = require("../utils/checkEmailExists");
+const removeObjectProp = require("../utils/removeObjectProp");
 
 const registerUser = async (req, res) => {
   try {
@@ -30,6 +31,7 @@ const registerUser = async (req, res) => {
       address,
       password: securedPassword,
       answer,
+      authMethod: "traditional",
     }).save();
 
     if (!user)
@@ -52,13 +54,26 @@ const registerUser = async (req, res) => {
         );
     }
 
+    const userRegisterResponse = user.toObject();
+
+    if (
+      userRegisterResponse.password &&
+      userRegisterResponse.lastPasswordChange &&
+      userRegisterResponse.authMethod
+    )
+      removeObjectProp(userRegisterResponse, [
+        "password",
+        "lastPasswordChange",
+        "authMethod",
+      ]);
+
     res
       .status(201)
       .json(
         errorFunction(
           false,
           "User created successfully. Please check your email for verification.",
-          user
+          userRegisterResponse
         )
       );
   } catch (error) {
@@ -81,6 +96,16 @@ const handleLogin = async (req, res) => {
 
     if (!user)
       return res.status(404).json(errorFunction(true, "User not found!"));
+
+    if (user.authMethod !== "traditional")
+      return res
+        .status(400)
+        .json(
+          errorFunction(
+            true,
+            "Users who registered with email and password is able to login with this route!"
+          )
+        );
 
     if (!user.verified)
       return res

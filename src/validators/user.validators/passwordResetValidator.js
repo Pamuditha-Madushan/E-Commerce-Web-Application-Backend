@@ -1,10 +1,11 @@
 const joi = require("joi");
+const userValidationSchema = require("../user.validators/userValidator");
 
 const passwordResetValidationSchema = joi.object({
-  email: joi.string().email().trim(true).required(),
-  password: joi.string().min(8).trim(true).required(),
-  answer: joi.string().required(),
-  newPassword: joi.string().min(8).trim(true).required(),
+  email: userValidationSchema.extract("email").required(),
+  password: userValidationSchema.extract("password").required(),
+  answer: userValidationSchema.extract("answer").required(),
+  newPassword: userValidationSchema.extract("password").required(),
 });
 
 module.exports = passwordResetValidationSchema;

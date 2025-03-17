@@ -2,7 +2,7 @@ const objectIdValidationSchema = require("../../../validators/mongoDb.validators
 const validate = require("../../../utils/validate");
 const errorFunction = require("../../../utils/errorFunction");
 
-const objectIdParamsValidation = async (req, res, next) => {
+const categoryIdParamsValidation = async (req, res, next) => {
   const payload = {
     id: req.params.id,
   };
@@ -22,4 +22,4 @@ const objectIdParamsValidation = async (req, res, next) => {
   next();
 };
 
-module.exports = objectIdParamsValidation;
+module.exports = categoryIdParamsValidation;

@@ -6,7 +6,9 @@ const isEmailExistsLean = async (email) => {
 };
 
 const isEmailExists = async (email) => {
-  const duplicate = await User.findOne({ email }).select("+password").exec();
+  const duplicate = await User.findOne({ email })
+    .select("+password +authMethod")
+    .exec();
   return duplicate;
 };
 

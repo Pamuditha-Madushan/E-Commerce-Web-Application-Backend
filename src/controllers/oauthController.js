@@ -61,6 +61,7 @@ exports.googleLogin = async (accessToken, refreshToken, profile, done) => {
         googleId: profile.id,
         name: profile.displayName,
         email: profile.emails[0].value,
+        verified: true,
         googleProfile: profile._json,
         authMethod: "google",
       });

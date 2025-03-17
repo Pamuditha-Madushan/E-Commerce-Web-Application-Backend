@@ -9,16 +9,12 @@
 readme.txt
 /src/logs
 
-/src/controllers/productController.js
-/src/controllers/paymentController.js
 /src/controllers/orderController.js
+/src/controllers/paymentController.js
 
-/src/routes/productRoutes.js
+/src/routes/paymentRoutes.js
 /src/routes/orderRoutes.js
 
-
-
-/src/models/productModel.js
 /src/models/orderModel.js
 
 # testing
