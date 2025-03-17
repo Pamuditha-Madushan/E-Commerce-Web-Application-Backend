@@ -2,37 +2,38 @@ const joi = require("joi");
 const objectIdValidationSchema = require("../mongoDb.validators/objectID.validator");
 const slugValidationSchema = require("../slug.validator");
 
-const productReviewValidationSchema = joi.object({
-  name: joi.string().min(3).required(),
-  rating: joi.number().required(),
-  comment: joi.string().min(2).required(),
-  user: objectIdValidationSchema.required(),
-});
-
 const productValidationSchema = joi.object({
   name: joi.string().min(3).required(),
   brand: joi.string().min(3).required(),
   slug: slugValidationSchema.extract("slug"),
   description: joi.string().min(15).required(),
   price: joi.number().required(),
-  category: objectIdValidationSchema.required(),
+  category: objectIdValidationSchema.extract("id").required(),
   quantity: joi.number().required(),
-  reviews: joi.array().items(productReviewValidationSchema).optional(),
+  reviews: joi.array().items(objectIdValidationSchema.extract("id")).optional(),
   rating: joi.number().default(0),
   numReviews: joi.number().default(0),
   countInStock: joi.number().default(0),
-  image: joi
-    .object({
-      data: joi.binary(),
-      contentType: joi.string().optional().valid("image/jpeg", "image/png"),
-    })
-    .optional()
-    .custom((value, helpers) => {
-      if (value && value.data && Buffer.byteLength(value.data) > 1000000)
-        return helpers.message("Image size must not exceed 1MB!");
-      return value;
-    }),
+  discount: joi.object({
+    percentage: joi.number().min(0).max(50).default(0),
+    visible: joi.boolean().default(false),
+  }),
+  images: joi.array().items(
+    joi
+      .object({
+        url: joi.string().required(),
+        publicId: joi.string().required(),
+      })
+      .custom((value, helpers) => {
+        if (value && value.data) {
+          const fileSize = Buffer.byteLength(value.data);
+          if (fileSize > 5000000)
+            return helpers.message("Image size must not exceed 5MB!");
+        }
+        return value;
+      })
+  ),
   shipping: joi.boolean(),
 });
 
-module.exports = { productValidationSchema, productReviewValidationSchema };
+module.exports = productValidationSchema;

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { type } = require("../validators/slug.validator");
 
 const userSchema = new mongoose.Schema(
   {
@@ -48,6 +49,11 @@ const userSchema = new mongoose.Schema(
     verified: {
       type: Boolean,
       default: false,
+    },
+    authMethod: {
+      type: String,
+      default: "traditional",
+      select: false,
     },
     lastPasswordChange: {
       type: Date,

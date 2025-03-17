@@ -1,75 +1,73 @@
-const {
-  productValidationSchema,
-  productReviewValidationSchema,
-} = require("../../../validators/product.validators/product.validator");
+const productValidationSchema = require("../../../validators/product.validators/product.validator");
+const slugify = require("slugify");
 const validate = require("../../../utils/validate");
 const errorFunction = require("../../../utils/errorFunction");
-const slugify = require("slugify");
+const handleUploadImages = require("../../../utils/handleUploadImages");
+const logger = require("../../../utils/logger");
+const storageService = require("../../../services/storageService");
 
 const productValidation = async (req, res, next) => {
-  if (!req.fields.name || typeof req.fields.name !== "string")
-    return res
-      .status(400)
-      .json(
-        errorFunction(
-          true,
-          "Product name is required in the request fields or must be a valid string!"
-        )
-      );
+  const {
+    name,
+    brand,
+    description,
+    price,
+    category,
+    quantity,
+    reviews,
+    rating,
+    numReviews,
+    countInStock,
+    shipping,
+    discountPercentage,
+    discountVisible,
+  } = req.fields;
 
-  const payload = {
-    name: req.fields.name,
-    slug: slugify(req.fields.name),
-    brand: req.fields.brand,
-    description: req.fields.description,
-    price: req.fields.price,
-    category: req.fields.category,
-    quantity: req.fields.quantity,
-    reviews: req.fields.reviews,
-    rating: req.fields.rating,
-    numReviews: req.fields.numReviews,
-    countInStock: req.fields.countInStock,
+  const { images } = req.files;
+  let tempUploadedImages = [];
+
+  const discount = {
+    percentage: discountPercentage || 0,
+    visible: discountVisible || false,
   };
 
-  const { error } = validate(productValidationSchema, payload);
+  try {
+    if (images) {
+      tempUploadedImages = await handleUploadImages(images);
+      req.fields.images = tempUploadedImages;
+    } else req.fields.images = [];
 
-  if (error)
-    return res
-      .status(406)
-      .json(
-        errorFunction(true, `Error in Product creation Data: ${error.message}`)
+    req.fields.slug = slugify(name);
+    req.fields.discount = discount;
+
+    const payload = {
+      ...req.fields,
+      images: tempUploadedImages,
+    };
+
+    const { error } = validate(productValidationSchema, payload);
+
+    if (error) {
+      await Promise.all(
+        payload.images.map((img) => storageService.deleteFile(img.publicId))
       );
-
-  if (req.fields.reviews && Array.isArray(req.fields.reviews)) {
-    const reviewErrors = req.fields.reviews
-      .map((review, index) => {
-        const reviewPayload = {
-          name: review.name,
-          rating: review.rating,
-          comment: review.comment,
-          user: review.user,
-        };
-
-        const { error: reviewError } = validate(
-          productReviewValidationSchema,
-          reviewPayload
-        );
-        return reviewError ? { index, message: reviewError.message } : null;
-      })
-      .filter(Boolean);
-
-    if (reviewErrors.length > 0)
       return res
         .status(406)
         .json(
           errorFunction(
             true,
-            `Error in Product Review Data: ${JSON.stringify(reviewErrors)}`
+            `Error in Product creation Data: ${error.message}`
           )
         );
-  }
+    }
 
-  next();
+    next();
+  } catch (error) {
+    logger.error("Error uploading images in validation middleware. ", error);
+    return res
+      .status(500)
+      .json(errorFunction(true, `Error uploading images: ${error.message}`));
+  }
 };
 
 module.exports = productValidation;

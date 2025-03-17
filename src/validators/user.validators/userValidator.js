@@ -3,7 +3,7 @@ const joi = require("joi");
 const userValidationSchema = joi
   .object({
     name: joi.string().min(3).max(30).trim(true).required(),
-    email: joi.string().email().trim(true).required(),
+    email: joi.string().email().lowercase().trim(true).required(),
     password: joi.string().min(8).trim(true).when("googleId", {
       is: joi.exist(),
       then: joi.forbidden(),

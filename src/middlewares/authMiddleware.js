@@ -1,6 +1,7 @@
 const JWT = require("jsonwebtoken");
 const User = require("../models/userModel.js");
 const errorFunction = require("../utils/errorFunction.js");
+const logger = require("../utils/logger.js");
 
 exports.requireSignIn = async (req, res, next) => {
   try {
@@ -46,7 +47,7 @@ exports.isAdmin = async (req, res, next) => {
 
     next();
   } catch (error) {
-    // console.log(error);
+    logger.error("Error in admin middleware. ", error);
     return res
       .status(401)
       .json(errorFunction(true, "Error in admin middleware"));

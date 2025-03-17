@@ -1,8 +1,9 @@
 const joi = require("joi");
+const userValidationSchema = require("../user.validators/userValidator");
 
 const loginValidationSchema = joi.object({
-  email: joi.string().email().trim(true).required(),
-  password: joi.string().min(8).trim(true).required(),
+  email: userValidationSchema.extract("email").required(),
+  password: userValidationSchema.extract("password").required(),
 });
 
 module.exports = loginValidationSchema;

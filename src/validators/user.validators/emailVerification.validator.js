@@ -1,7 +1,8 @@
 const joi = require("joi");
+const userValidationSchema = require("../user.validators/userValidator");
 
 const emailVerificationSchema = joi.object({
-  email: joi.string().email().trim(true).required(),
+  email: userValidationSchema.extract("email").required(),
   otp: joi
     .string()
     .length(6)

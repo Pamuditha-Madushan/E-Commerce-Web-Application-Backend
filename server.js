@@ -11,7 +11,6 @@ require("colors");
 require("./src/config/cron");
 const connectDB = require("./src/config/db");
 const sessionConfig = require("./src/config/session");
-const formidableMiddleware = require("express-formidable");
 const loggingMiddleware = require("./src/middlewares/loggingMiddleware");
 const logger = require("./src/utils/logger");
 // const defaultRoutes = require("./src/routes/defaultRoutes");
@@ -20,6 +19,7 @@ const authRoutes = require("./src/routes/authRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
 const categoryRoutes = require("./src/routes/categoryRoutes");
 const productRoutes = require("./src/routes/productRoutes");
+const reviewRoutes = require("./src/routes/reviewRoutes");
 // const orderRoutes = require("./src/routes/orderRoutes");
 const gracefulShutdown = require("./src/services/gracefulShutdown");
 
@@ -35,27 +35,17 @@ app.use(cookieParser());
 
 app.use(session(sessionConfig));
 
-// app.use(
-//   session({
-//     secret: process.env.SESSION_SECRET_KEY || "cats",
-//     resave: false,
-//     saveUninitialized: true,
-//     cookie: { secure: false },
-//   })
-// );
-
 app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(loggingMiddleware);
 
-// app.use(formidableMiddleware());
-
 app.use("/", authRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/category", categoryRoutes);
-app.use("/api/v1/product", productRoutes);
+app.use("/api/v1/products", productRoutes);
+app.use("/api/v1/reviews", reviewRoutes);
 // app.use("/api/v1/order", orderRoutes);
 
 // app.use("/", defaultRoutes);

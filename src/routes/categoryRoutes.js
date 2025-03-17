@@ -5,7 +5,7 @@ const categoryValidation = require("../middlewares/validationMiddlewares/categor
 const categoryUpdateValidation = require("../middlewares/validationMiddlewares/category.routes.validation.middlewares/category.update.validation.middleware");
 const categorySlugValidation = require("../middlewares/validationMiddlewares/slug.validation.middleware");
 const searchKeywordValidation = require("../middlewares/validationMiddlewares/search.keyword.validation.middleware");
-const objectIdParamsValidation = require("../middlewares/validationMiddlewares/mongoDb.validation.middlewares/objectID.params.validation.middleware");
+const categoryIdParamsValidation = require("../middlewares/validationMiddlewares/category.routes.validation.middlewares/categoryId.params.validation.middleware");
 
 const router = express.Router();
 
@@ -35,7 +35,7 @@ router.get(
 
 router.delete(
   "/delete-category/:id",
-  objectIdParamsValidation,
+  categoryIdParamsValidation,
   requireSignIn,
   isAdmin,
   CategoryController.deleteCategory
