@@ -1,9 +1,9 @@
-import slugify from "slugify";
-import errorFunction from "../../../utils/errorFunction";
-import imageDataRead from "../../../utils/imageDataRead";
-
+const slugify = require("slugify");
+const errorFunction = require("../../../utils/errorFunction");
+const handleUploadImages = require("../../../utils/handleUploadImages");
 const productUpdateValidationSchema = require("../../../validators/product.validators/product.update.validator");
 const validate = require("../../../utils/validate");
+const logger = require("../../../utils/logger");
 
 const productUpdateValidation = async (req, res, next) => {
   const {
@@ -13,7 +13,6 @@ const productUpdateValidation = async (req, res, next) => {
     price,
     category,
     quantity,
-    reviews,
     rating,
     numReviews,
     countInStock,
@@ -22,68 +21,49 @@ const productUpdateValidation = async (req, res, next) => {
     discountVisible,
   } = req.fields;
 
-  const { image } = req.files;
-
-  const imageData = imageDataRead(image);
+  const { images } = req.files;
+  let tempUploadedImages = [];
 
   const discount = {
     percentage: discountPercentage,
     visible: discountVisible,
   };
 
-  if (name) req.fields.slug = slugify(name);
+  try {
+    if (images) {
+      tempUploadedImages = await handleUploadImages(images);
+      req.fields.images = tempUploadedImages;
+    } else req.fields.images = [];
 
-  req.fields.discount = discount;
+    if (name) req.fields.slug = slugify(name);
 
-  const payload = {
-    pid: req.params.pid,
-    ...req.fields,
-    image: imageData,
-  };
+    req.fields.discount = discount;
 
-  req.fields.image = imageData;
+    const payload = {
+      pid: req.params.pid,
+      ...req.fields,
+    };
 
-  const { error } = validate(productUpdateValidationSchema, payload);
+    const { error } = validate(productUpdateValidationSchema, payload);
 
-  if (error)
-    return res
-      .status(406)
-      .json(
-        errorFunction(true, `Error in Product Update Data: ${error.message}`)
+    if (error) {
+      await Promise.all(
+        payload.images.map((img) => storageService.deleteFile(img.publicId))
       );
-
-  if (reviews && Array.isArray(JSON.parse(reviews))) {
-    const parsedReviews = JSON.parse(reviews);
-
-    const reviewErrors = parsedReviews
-      .map((review, index) => {
-        const reviewPayload = {
-          name: review.name,
-          rating: review.rating,
-          comment: review.comment,
-          user: review.user,
-        };
-
-        const { error: reviewError } = validate(
-          productReviewValidationSchema,
-          reviewPayload
-        );
-        return reviewError ? { index, message: reviewError.message } : null;
-      })
-      .filter(Boolean);
-
-    if (reviewErrors.length > 0)
       return res
         .status(406)
         .json(
-          errorFunction(
-            true,
-            `Error in Product Review Data: ${JSON.stringify(reviewErrors)}`
-          )
+          errorFunction(true, `Error in Product Update Data: ${error.message}`)
         );
-  }
+    }
 
-  next();
+    next();
+  } catch (error) {
+    logger.error("Error uploading images in validation middleware. ", error);
+    return res
+      .status(500)
+      .json(errorFunction(true, `Error uploading images: ${error.message}`));
+  }
 };
 
 module.exports = productUpdateValidation;

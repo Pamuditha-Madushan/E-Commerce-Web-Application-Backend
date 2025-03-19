@@ -3,6 +3,8 @@ const Category = require("../models/categoryModel");
 const errorFunction = require("../utils/errorFunction");
 const handleMoveImages = require("../utils/handleMoveImages");
 const logger = require("../utils/logger");
+const getImageData = require("../services/imageService");
+const storageService = require("../services/storageService");
 
 const DESTINATION = process.env.GCS_DESTINATION_FOLDER_PATH;
 
@@ -16,7 +18,6 @@ const ProductController = {
         price,
         category,
         quantity,
-        reviews,
         rating,
         numReviews,
         countInStock,
@@ -31,8 +32,6 @@ const ProductController = {
         $or: [{ $and: [{ name }, { brand }] }, { slug }],
       }).lean(true);
 
-      const movedImages = await handleMoveImages(images, DESTINATION);
-
       if (existingProduct)
         return res
           .status(403)
@@ -43,6 +42,9 @@ const ProductController = {
             )
           );
 
+      const reviews = [];
+      const movedImages = await handleMoveImages(images, DESTINATION);
+
       const product = new Product({
         name,
         slug,
@@ -51,7 +53,7 @@ const ProductController = {
         price,
         category,
         quantity,
-        reviews: [],
+        reviews,
         rating: rating || 0,
         numReviews: numReviews || 0,
         countInStock: countInStock || 0,
@@ -61,11 +63,6 @@ const ProductController = {
       });
 
       await product.save();
-
-      // const productResponse = product.toObject();
-
-      // if (productResponse.image)
-      // removeObjectProp(productResponse, ["images.url"]);
 
       res
         .status(201)
@@ -84,7 +81,7 @@ const ProductController = {
     try {
       const products = await Product.find({})
         .populate("category")
-        .select("-image -createdAt -updatedAt -__v")
+        .select("-images.publicId -createdAt -updatedAt -__v")
         .limit(12)
         .sort({ createdAt: -1 });
 
@@ -110,7 +107,7 @@ const ProductController = {
   getProduct: async (req, res) => {
     try {
       const product = await Product.findOne({ slug: req.params.slug })
-        .select("-image -createdAt -updatedAt -__v")
+        .select("-createdAt -updatedAt -__v")
         .populate("category", "-__v")
         .lean(true);
 
@@ -134,34 +131,35 @@ const ProductController = {
   getProductImage: async (req, res) => {
     try {
       const product = await Product.findById(req.params.pid)
-        .select("image")
+        .select("images")
         .exec();
 
       if (!product)
         return res.status(404).json(errorFunction(true, "No product found!"));
 
-      if (product.image && product.image.data) {
-        const imageBuffer =
-          product.image.data instanceof Buffer
-            ? product.image.data
-            : Buffer.from(product.image.data);
+      if (product.images && product.images.length > 0) {
+        const imagePreview = product.images[0];
+        const imageUrl = imagePreview.url;
 
-        if (!Buffer.isBuffer(imageBuffer))
-          return res
-            .status(400)
-            .json(errorFunction(true, "Image data is not a valid Buffer."));
-        const contentType = product.image.contentType.split(";")[0];
-        res.set("Content-type", contentType);
+        try {
+          const { imageBuffer, contentType } = await getImageData(imageUrl);
 
-        return res
-          .status(200)
-          .json(
-            errorFunction(
-              false,
-              "Fetched product image successfully.",
-              imageBuffer
-            )
+          res.setHeader("Content-Type", contentType);
+          return res.status(200).send(
+            errorFunction(false, "Fetched product image successfully.", {
+              imageBuffer,
+            })
           );
+        } catch (error) {
+          if (
+            error.message ===
+            "Unsupported image format. Only JPEG and PNG are allowed."
+          )
+            return res.status(400).json(true, error.message);
+          else if (error.message === "Image not found in the storage.")
+            return res.status(404).json(true, error.message);
+          else throw error;
+        }
       } else {
         return res
           .status(404)
@@ -202,16 +200,16 @@ const ProductController = {
     }
   },
 
-  // //update products
   updateProduct: async (req, res) => {
     try {
+      const productId = req.params.pid;
       const {
         name,
+        brand,
         description,
         price,
         category,
         quantity,
-        reviews,
         rating,
         numReviews,
         countInStock,
@@ -220,39 +218,84 @@ const ProductController = {
 
       const slug = req.fields.slug;
       const discount = req.fields.discount;
-      const image = req.fields.image;
+      const images = req.fields.images;
 
-      const products = await Product.findByIdAndUpdate(
-        req.params.pid,
-        {
-          name,
-          slug,
-          brand,
-          description,
-          price,
-          category,
-          quantity,
-          reviews,
-          rating,
-          numReviews,
-          countInStock,
-          discount,
-          image,
-          shipping: shipping === "true",
-        },
-        { new: true, runValidators: true }
-      )
-        .select("-image -__v")
-        .exec();
+      const product = await Product.findById(productId).exec();
 
-      if (!products)
+      if (!product)
         return res.status(404).json(errorFunction(true, "No product found!"));
 
-      await products.save();
+      if (product.name === name && product.brand === brand)
+        return res
+          .status(400)
+          .json(
+            errorFunction(
+              true,
+              "The entered name and brand cannot be the same as an existing name and brand!"
+            )
+          );
 
-      res
-        .status(200)
-        .json(errorFunction(false, "Product updated successfully.", products));
+      const { filesToRemove, filesToUpload } = storageService.compareFile(
+        product.images ? product.images : [],
+        images ? images : []
+      );
+
+      const movedImages = images
+        ? await handleMoveImages(images, DESTINATION)
+        : [];
+
+      try {
+        const result = await Product.updateOne(
+          { _id: productId },
+          {
+            $set: {
+              name,
+              slug,
+              brand,
+              description,
+              price,
+              category,
+              quantity,
+              rating,
+              numReviews,
+              countInStock,
+              discount,
+              images: movedImages,
+              shipping: shipping === "true",
+            },
+          },
+          { new: true, runValidators: true }
+        )
+          .select("-__v")
+          .exec();
+
+        if (!result)
+          return res
+            .status(400)
+            .json(errorFunction(true, "Product update failed!"));
+
+        const deletePromises = filesToRemove
+          ? filesToRemove.map(async (file) => {
+              return await storageService.deleteFile(
+                `${DESTINATION}/${file.publicId}`
+              );
+            })
+          : [];
+
+        await Promise.all(deletePromises);
+
+        res
+          .status(200)
+          .json(errorFunction(false, "Product updated successfully.", result));
+      } catch (err) {
+        const rollbackPromises = images
+          ? images.map(async (image) => {
+              return await storageService.deleteFile(image.publicId);
+            })
+          : [];
+        await Promise.all(rollbackPromises);
+        throw err;
+      }
     } catch (error) {
       logger.error("Error while updating the product. ", error);
       return res
@@ -289,15 +332,12 @@ const ProductController = {
       if (radio && radio.length)
         args.price = { $gte: radio[0], $lte: radio[1] };
 
-      const products = await Product.find(args).select("");
+      const products = await Product.find(args).select(
+        "-createdAt -updatedAt -__v"
+      );
 
       if (!products)
         return res.status(404).json(errorFunction(true, "No product found!"));
-
-      // complete this with thumbnails, (if possible store those thumbnails in g cloud or something free) and edit product response.
-      // const productsWithImages = products.map(product => {
-      //   if (product.image && product.image.data)
-      // });
 
       res
         .status(200)
@@ -342,7 +382,7 @@ const ProductController = {
       const page = req.params.page ? req.params.page : 1;
 
       const products = await Product.find({})
-        .select("-image -createdAt -updatedAt -__v")
+        .select("-createdAt -updatedAt -__v")
         .skip((page - 1) * productsPerPage)
         .limit(productsPerPage)
         .sort({ createdAt: -1 });
@@ -395,7 +435,7 @@ const ProductController = {
 
       const products = await Product.find({
         ...keyword,
-      }).select("-image -createdAt -updatedAt -__v");
+      }).select("-createdAt -updatedAt -__v");
 
       if (products.length === 0)
         return res
@@ -437,7 +477,7 @@ const ProductController = {
         category: category._id,
         _id: { $ne: pid },
       })
-        .select("-image -createdAt -updatedAt -__v")
+        .select("-createdAt -updatedAt -__v")
         .limit(3)
         .populate("category", "-__v")
         .lean(true);
@@ -476,7 +516,7 @@ const ProductController = {
         return res.status(404).json(errorFunction(true, "No category found!"));
 
       const products = await Product.find({ category })
-        .select("-image -createdAt -updatedAt -__v") // remove image form here after the thumbnail generation part done
+        .select("-createdAt -updatedAt -__v") // remove image form here after the thumbnail generation part done
         .populate("category", "-__v")
         .lean(true);
 
