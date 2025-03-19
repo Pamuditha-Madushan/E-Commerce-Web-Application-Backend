@@ -7,6 +7,7 @@ const uploadMiddleware = require("../middlewares/upload.middleware");
 const productValidation = require("../middlewares/validationMiddlewares/product.validation.middlewares/product.validation.middleware");
 const slugValidation = require("../middlewares/validationMiddlewares/slug.validation.middleware");
 const productIdParamsValidation = require("../middlewares/validationMiddlewares/product.validation.middlewares/productId.params.validation.middleware");
+const productUpdateValidation = require("../middlewares/validationMiddlewares/product.validation.middlewares/product.update.validation.middleware");
 const filterProductsValidation = require("../middlewares/validationMiddlewares/product.validation.middlewares/product.filter.validation.middleware");
 const searchKeywordValidation = require("../middlewares/validationMiddlewares/search.keyword.validation.middleware");
 const pageValidation = require("../middlewares/validationMiddlewares/page.params.validation.middleware");
@@ -26,12 +27,11 @@ router.post(
 
 router.get("/", ProductController.getAllProducts);
 
-// commented temporarily
-// router.post(
-//   "/filter",
-//   filterProductsValidation,
-//   ProductController.filterProducts
-// );
+router.post(
+  "/filter",
+  filterProductsValidation,
+  ProductController.filterProducts
+);
 
 router.get("/count", requireSignIn, isAdmin, ProductController.countProducts);
 
@@ -49,20 +49,22 @@ router.get(
   ProductController.getProductImage
 );
 
-// //routes
-// router.put(
-//   "/update-product/:pid",
-//   requireSignIn,
-//   isAdmin,
-//   formidable(),
-//   updateProductController
-// );
+router.put(
+  "/update/:pid",
+  requireSignIn,
+  isAdmin,
+  checkCorrectFormat,
+  // formidable(),
+  uploadMiddleware,
+  productUpdateValidation,
+  ProductController.updateProduct
+);
 
 router.delete(
   "/delete/:pid",
-  productIdParamsValidation,
   requireSignIn,
   isAdmin,
+  productIdParamsValidation,
   ProductController.deleteProduct
 );
 

@@ -10,8 +10,7 @@ STEP – 01
 
 Download project source code.
 
-GitHub: (https://github.com/Pamuditha-Madushan/E-Commerce-Web-Application-Backend.git)
-
+GitHub: https://github.com/Pamuditha-Madushan/E-Commerce-Web-Application-Backend.git
 
 <br />
 

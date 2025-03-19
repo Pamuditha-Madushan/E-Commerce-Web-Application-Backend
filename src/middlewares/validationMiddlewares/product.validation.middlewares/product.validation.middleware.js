@@ -14,7 +14,6 @@ const productValidation = async (req, res, next) => {
     price,
     category,
     quantity,
-    reviews,
     rating,
     numReviews,
     countInStock,
@@ -42,7 +41,6 @@ const productValidation = async (req, res, next) => {
 
     const payload = {
       ...req.fields,
-      images: tempUploadedImages,
     };
 
     const { error } = validate(productValidationSchema, payload);

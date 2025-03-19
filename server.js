@@ -20,7 +20,8 @@ const adminRoutes = require("./src/routes/adminRoutes");
 const categoryRoutes = require("./src/routes/categoryRoutes");
 const productRoutes = require("./src/routes/productRoutes");
 const reviewRoutes = require("./src/routes/reviewRoutes");
-// const orderRoutes = require("./src/routes/orderRoutes");
+const paymentRoutes = require("./src/routes/paymentRoutes");
+const orderRoutes = require("./src/routes/orderRoutes");
 const gracefulShutdown = require("./src/services/gracefulShutdown");
 
 connectDB();
@@ -46,7 +47,8 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
-// app.use("/api/v1/order", orderRoutes);
+app.use("/api/v1/payment", paymentRoutes);
+app.use("/api/v1/orders", orderRoutes);
 
 // app.use("/", defaultRoutes);
 

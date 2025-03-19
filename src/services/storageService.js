@@ -3,12 +3,10 @@ const fs = require("fs");
 const { bucket } = require("../config/gcStorage");
 const logger = require("../utils/logger");
 
-const TEMP_FOLDER_LOCATION = process.env.GCS_TEMP_FOLDER_LOCATION;
+const TEMP = process.env.GCS_TEMP_FOLDER_LOCATION;
 
 function getUploadRoute(identifier) {
-  return TEMP_FOLDER_LOCATION
-    ? `${TEMP_FOLDER_LOCATION}/${identifier}`
-    : identifier;
+  return TEMP ? `${TEMP}/${identifier}` : identifier;
 }
 
 class StorageService {
@@ -62,13 +60,6 @@ class StorageService {
 
   async moveFile(publicId, destination) {
     try {
-      console.log(
-        "Attempting to move file:",
-        publicId,
-        "to destination:",
-        destination
-      );
-
       const file = bucket.file(getUploadRoute(publicId));
 
       const newMoveRoute = destination
@@ -77,7 +68,7 @@ class StorageService {
 
       await file.move(newMoveRoute);
 
-      const newPublicUrl = `https://storage.googleapis.com/${bucket.name}/${newMoveRoute}/`;
+      const newPublicUrl = `https://storage.googleapis.com/${bucket.name}/${newMoveRoute}`;
       logger.info(`File ${publicId} moved to ${newPublicUrl}`);
       return newPublicUrl;
     } catch (error) {
@@ -91,9 +82,25 @@ class StorageService {
       await bucket.file(publicId).delete();
       return true;
     } catch (error) {
-      logger.error("Error deleting file from the GCS: ", error);
+      logger.error("Error deleting file from the Cloud storage: ", error);
       return false;
     }
+  }
+
+  compareFile(existingFiles, newFiles) {
+    const filesToRemove = existingFiles
+      ? existingFiles.filter(
+          (file) => !newFiles.find((newFile) => newFile.url === file.url)
+        )
+      : [];
+    const filesToUpload = newFiles
+      ? newFiles.filter(
+          (file) =>
+            !existingFiles.find((existingFile) => existingFile.url === file.url)
+        )
+      : [];
+
+    return { filesToRemove, filesToUpload };
   }
 }
 
