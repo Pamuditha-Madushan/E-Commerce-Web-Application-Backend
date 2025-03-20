@@ -1,7 +1,7 @@
 const express = require("express");
-const formidable = require("express-formidable");
 const ProductController = require("../controllers/productController");
-const { isAdmin, requireSignIn } = require("../middlewares/authMiddleware");
+const { isAdmin } = require("../middlewares/authMiddleware");
+const checkAuth = require("../middlewares/checkAuth.middleware");
 const checkCorrectFormat = require("../middlewares/check.correct.data.source.format.middleware");
 const uploadMiddleware = require("../middlewares/upload.middleware");
 const productValidation = require("../middlewares/validationMiddlewares/product.validation.middlewares/product.validation.middleware");
@@ -16,10 +16,9 @@ const router = express.Router();
 
 router.post(
   "/create",
-  requireSignIn,
+  checkAuth,
   isAdmin,
   checkCorrectFormat,
-  // formidable(),
   uploadMiddleware,
   productValidation,
   ProductController.createProduct
@@ -33,7 +32,7 @@ router.post(
   ProductController.filterProducts
 );
 
-router.get("/count", requireSignIn, isAdmin, ProductController.countProducts);
+router.get("/count", checkAuth, isAdmin, ProductController.countProducts);
 
 router.get(
   "/search",
@@ -51,10 +50,9 @@ router.get(
 
 router.put(
   "/update/:pid",
-  requireSignIn,
+  checkAuth,
   isAdmin,
   checkCorrectFormat,
-  // formidable(),
   uploadMiddleware,
   productUpdateValidation,
   ProductController.updateProduct
@@ -62,7 +60,7 @@ router.put(
 
 router.delete(
   "/delete/:pid",
-  requireSignIn,
+  checkAuth,
   isAdmin,
   productIdParamsValidation,
   ProductController.deleteProduct

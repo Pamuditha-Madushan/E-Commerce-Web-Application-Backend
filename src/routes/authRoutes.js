@@ -15,10 +15,6 @@ router.get("/protected", isLoggedIn, authController.protectedPage);
 router.get("/logout", authController.logout);
 
 router.get("/auth/google/failure", authController.googleFailure);
-//   "/user-profile/:userId",
-//   isLoggedIn,
-//   authController.getAuthenticatedUserId
-// );
 
 router.post(
   "/complete-user-profile",

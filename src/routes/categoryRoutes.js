@@ -1,5 +1,6 @@
 const express = require("express");
-const { isAdmin, requireSignIn } = require("../middlewares/authMiddleware");
+const { isAdmin } = require("../middlewares/authMiddleware");
+const checkAuth = require("../middlewares/checkAuth.middleware");
 const CategoryController = require("../controllers/categoryController");
 const categoryValidation = require("../middlewares/validationMiddlewares/category.routes.validation.middlewares/category.validation.middleware");
 const categoryUpdateValidation = require("../middlewares/validationMiddlewares/category.routes.validation.middlewares/category.update.validation.middleware");
@@ -12,7 +13,7 @@ const router = express.Router();
 router.post(
   "/add-category",
   categoryValidation,
-  requireSignIn,
+  checkAuth,
   isAdmin,
   CategoryController.createCategory
 );
@@ -22,7 +23,7 @@ router.get("/", searchKeywordValidation, CategoryController.getAllCategories);
 router.put(
   "/update-category/:id",
   categoryUpdateValidation,
-  requireSignIn,
+  checkAuth,
   isAdmin,
   CategoryController.updateCategory
 );
@@ -36,7 +37,7 @@ router.get(
 router.delete(
   "/delete-category/:id",
   categoryIdParamsValidation,
-  requireSignIn,
+  checkAuth,
   isAdmin,
   CategoryController.deleteCategory
 );

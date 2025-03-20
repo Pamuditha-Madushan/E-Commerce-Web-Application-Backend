@@ -7,17 +7,10 @@ exports.requireSignIn = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || req.headers.Authorization;
     if (!authHeader?.startsWith("Bearer "))
-      return res
-        .status(401)
-        .json(
-          errorFunction(true, "Authorization header is missing or malformed!")
-        );
+      return next(new Error("Authorization header is missing or malformed!"));
 
     const token = authHeader.split(" ")[1];
-    if (!token)
-      return res
-        .status(403)
-        .json(errorFunction(true, "Token is missing or invalid format!"));
+    if (!token) return next(new Error("Token is missing or invalid format!"));
 
     const decoded = JWT.verify(token, process.env.JWT_SECRET);
 
@@ -25,16 +18,12 @@ exports.requireSignIn = async (req, res, next) => {
     next();
   } catch (error) {
     if (error.name === "JsonWebTokenError")
-      return res
-        .status(401)
-        .json(errorFunction(true, "Invalid or malformed token!"));
+      return next(new Error("Invalid or malformed token!"));
 
     if (error.name === "TokenExpiredError")
-      return res.status(401).json(errorFunction(true, "Token has expired!"));
+      return next(new Error("TokeToken has expired!"));
 
-    return res
-      .status(500)
-      .json(errorFunction(true, `Internal server error ${error.message}`));
+    return next(error);
   }
 };
 
