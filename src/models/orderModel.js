@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const Product = require("./productModel");
 const { logger } = require("../config/nodemailer");
 
 const orderSchema = new mongoose.Schema(
@@ -26,17 +25,16 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-orderSchema.post("save", async function (doc) {
+orderSchema.post("save", async function (doc, next) {
   console.log("Middleware executed for order:", doc._id);
   try {
     for (const product of doc.products) {
-      //  await Product.
-      // await this.model("Product").    // check this works if it is remove Product import
       await this.model("Product").findByIdAndUpdate(product, {
         $inc: { countInStock: -1 },
       });
       console.log(`Updated stock for product ID: ${product}`);
     }
+    next();
   } catch (error) {
     logger.error("Error updating stock:", error);
     throw error;

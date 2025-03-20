@@ -32,7 +32,9 @@ exports.googleCallback = (req, res, next) => {
 };
 
 exports.protectedPage = (req, res) => {
-  res.send(`Hello ${req.user.name}`);
+  res
+    .status(200)
+    .json(errorFunction(false, `${req.user.name} signed in successfully.`));
 };
 
 exports.logout = (req, res) => {
@@ -48,7 +50,7 @@ exports.logout = (req, res) => {
 };
 
 exports.googleFailure = (req, res) => {
-  res.send("Failed to authenticate!");
+  res.status(401).json(errorFunction(true, "Failed to authenticate!"));
 };
 
 exports.googleLogin = async (accessToken, refreshToken, profile, done) => {

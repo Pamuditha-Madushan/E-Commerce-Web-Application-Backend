@@ -26,9 +26,6 @@ router.route("/register").post(userValidation, registerUser);
 
 router.route("/auth/login").post(loginValidation, handleLogin);
 
-// //test routes
-// router.get("/test", requireSignIn, isAdmin, testController);
-
 // //protected User route auth
 // router.get("/user-auth", requireSignIn, (req, res) => {
 //   res.status(200).send({ ok: true });

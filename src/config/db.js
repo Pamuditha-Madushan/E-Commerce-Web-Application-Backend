@@ -20,17 +20,16 @@ const connectDB = async () => {
       `Connected to the MongoDB Atlas: ${mongooseConnection.connection.host}`
     );
   } catch (error) {
-    logger.error(error);
+    if (
+      error.message.includes("ECONNREFUSED") ||
+      error.message.includes("ENOTFOUND")
+    )
+      logger.error(
+        "No internet connection or MongoDB Atlas is unreachable. Please check your network connection."
+      );
+    else logger.error(`MongoDB connection error: ${error.message}`);
     process.exit(1);
   }
 };
-
-// mongoose.connection.on("Disconnected", () => {
-//   logger.info(`mongodb is disconnected`);
-// });
-
-// mongoose.connection.on("connected", () => {
-//   logger.info(`mongodb is connected`);
-// });
 
 module.exports = connectDB;
